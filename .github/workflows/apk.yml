@@ -1,0 +1,48 @@
+name: Crear APK
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app-evacuacion
+    steps:
+      - name: Descargar los archivos del proyecto
+        uses: actions/checkout@v4
+
+      - name: Instalar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Compilar el APK
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Ponerle nombre al APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk ruta-evacuacion.apk
+
+      - name: Guardar una copia para descargar desde Actions
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruta-evacuacion-apk
+          path: app-evacuacion/ruta-evacuacion.apk
+
+      - name: Publicar el APK con enlace fijo
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: descarga
+          name: Descarga de la aplicación
+          body: Aplicación Ruta de evacuación (APK para Android).
+          files: app-evacuacion/ruta-evacuacion.apk
+          make_latest: true
