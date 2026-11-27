@@ -2,371 +2,55 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ruta de evacuación</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#073b4c">
+<title>Ruta de evacuación · CBTIS 188</title>
+<style>
+:root{color-scheme:light;--ink:#102a35;--muted:#405965;--bg:#f4f8fa;--card:#fff;--line:#c5d5dc;--blue:#0759a5;--green:#006b45;--red:#a32620;--route:#087e55;--focus:#ffbf47}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}header{background:#073b4c;color:#fff;padding:1rem max(1rem,env(safe-area-inset-left));}h1{font-size:1.55rem;line-height:1.2;margin:0 0 .25rem}header p{margin:0;font-size:1rem}main{max-width:980px;margin:auto;padding:1rem}section,.warning{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1rem;margin:0 0 1rem}.warning{border:3px solid #a34a00;background:#fff7e8;color:#492300;font-weight:650}label{display:block;font-weight:700;margin:.5rem 0}.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.8rem}select,button{font:inherit;min-height:54px;border:2px solid #45616e;border-radius:10px;padding:.65rem .8rem;background:#fff;color:var(--ink)}button{font-weight:750;cursor:pointer}button:focus-visible,select:focus-visible,a:focus-visible{outline:4px solid var(--focus);outline-offset:3px}.primary{background:var(--blue);border-color:var(--blue);color:white}.secondary{background:#e8f1f5}.actions{display:flex;flex-wrap:wrap;gap:.65rem;margin-top:.7rem}.mapwrap{overflow:auto;border:2px solid #506772;border-radius:12px;background:#e8eef0}.mapwrap svg{display:block;width:100%;min-width:500px;height:auto}.block{fill:#cbd6da;stroke:#506772;stroke-width:2}.yard{fill:#dce9d5;stroke:#728b68;stroke-width:2}.path-base{fill:none;stroke:#627983;stroke-width:9;stroke-linecap:round;stroke-linejoin:round}.path-route{fill:none;stroke:var(--route);stroke-width:8;stroke-linecap:round;stroke-linejoin:round}.node{fill:#fff;stroke:#0759a5;stroke-width:4}.exit{fill:#006b45;stroke:#fff;stroke-width:3}.maptext{font:700 15px system-ui;fill:#102a35;paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}.smalltext{font:600 13px system-ui;fill:#102a35}.person{font-size:28px;filter:drop-shadow(0 1px 2px #fff)}.stats{font-weight:700}.instruction{font-size:1.25rem;font-weight:750;padding:.8rem;background:#e9f4ed;border-left:6px solid var(--green);border-radius:8px}.subtle{font-size:.92rem;color:var(--muted)}ol{padding-left:1.5rem}li{margin:.35rem 0}.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
 </head>
 <body>
-<style>
-/* Concepto: una sola escena a pantalla completa. Croquis visto desde arriba, con relieve ligero,
-   y una persona que camina hasta la puerta de SALIDA y vuelve a empezar. */
-:root {
-  --fondo: #E9EDEE;
-  --piso: #F7F8F8;
-  --linea: #D5DCDE;
-  --cuarto: #CBD4D7;
-  --frente: #7F8F95;
-  --pared: #1D2B31;
-  --texto: #1D2B31;
-  --salida: #087F4D;
-  --salida-texto: #FFFFFF;
-  --persona: #1F5FD1;
-  --cabeza: #F1CDAA;
-  --pelo: #2B221E;
-  --sombra: rgba(24, 40, 46, .18);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --fondo: #0F1518; --piso: #172025; --linea: #243238; --cuarto: #2A3A41; --frente: #4E616A;
-    --pared: #B4C4CA; --texto: #D5E0E4; --salida: #2BD08A; --salida-texto: #06281A;
-    --persona: #6EA2FF; --cabeza: #E9C4A0; --pelo: #5A4637; --sombra: rgba(0, 0, 0, .35);
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --fondo: #0F1518; --piso: #172025; --linea: #243238; --cuarto: #2A3A41; --frente: #4E616A;
-  --pared: #B4C4CA; --texto: #D5E0E4; --salida: #2BD08A; --salida-texto: #06281A;
-  --persona: #6EA2FF; --cabeza: #E9C4A0; --pelo: #5A4637; --sombra: rgba(0, 0, 0, .35);
-  color-scheme: dark;
-}
-
-html, body { height: 100%; }
-body {
-  margin: 0;
-  display: flex;
-  background: var(--fondo);
-  color: var(--texto);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  padding-block: 8px;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-}
-#escena { position: relative; flex: 1; min-width: 0; min-height: 0; }
-#lienzo { position: absolute; left: 0; top: 0; display: block; }
-#escena:focus-visible { outline: 3px solid var(--salida); outline-offset: 2px; }
-#pista {
-  position: absolute; left: 0; right: 0; bottom: 6px; margin: 0; text-align: center;
-  font-size: 1rem; font-weight: 700; color: var(--texto);
-}
-</style>
-
-<main id="escena">
-  <canvas id="lienzo" role="img"></canvas>
-  <p id="pista" hidden>Toque para ver el camino</p>
+<header><h1>Ruta de evacuación · CBTIS 188</h1><p>Indicaciones accesibles por voz, texto y croquis</p></header>
+<main>
+<div class="warning" role="alert"><strong>Prototipo: no usar todavía como guía oficial de emergencia.</strong> Este croquis se trazó a partir de una imagen aérea y rutas dibujadas; las distancias, pasillos, salidas abiertas, rampas, obstáculos y accesibilidad deben revisarse físicamente y aprobarse por Protección Civil del plantel.</div>
+<section aria-labelledby="inicio"><h2 id="inicio">¿Dónde estás?</h2><p id="status" aria-live="polite">Elige el cartel QR que escaneaste o selecciona tu ubicación manualmente.</p><div class="controls"><div><label for="location">Punto de inicio</label><select id="location" aria-describedby="location-help"></select><div id="location-help" class="subtle">El QR identifica este punto; no localiza tu posición en tiempo real.</div></div><div><label for="mode">Preferencia de ruta</label><select id="mode"><option value="normal">Ruta más corta (provisional)</option><option value="sin-escaleras">Evitar tramos marcados con escaleras</option></select><div class="subtle">No hay datos verificados de rampas ni de accesibilidad física.</div></div></div><div class="actions"><button class="primary" id="start">Calcular ruta y escuchar</button><button class="secondary" id="speak">Repetir indicación en voz alta</button><button class="secondary" id="next">Siguiente indicación</button></div><p class="subtle">La voz requiere que el teléfono tenga español instalado y el volumen activado. Si no se escucha, sigue las instrucciones escritas y pide apoyo.</p></section>
+<section aria-labelledby="route-title"><h2 id="route-title">Tu ruta</h2><p id="route-summary" class="stats" aria-live="polite">Selecciona tu cartel y pulsa “Calcular ruta”.</p><p id="instruction" class="instruction" aria-live="assertive">La ruta aparecerá aquí, en texto y en el croquis.</p><div class="mapwrap"><svg id="map" viewBox="0 0 820 600" role="img" aria-labelledby="maptitle mapdesc"><title id="maptitle">Croquis esquemático del CBTIS 188</title><desc id="mapdesc">Mapa aproximado con pasillos conectados y tres salidas: puerta de la cancha, puerta principal y salida del estacionamiento. No representa ubicación GPS.</desc><rect class="yard" x="12" y="12" width="796" height="576" rx="16"/><text class="maptext" x="32" y="42">NORTE · calle</text>
+<!-- Edificios: aproximación visual del plano aéreo -->
+<rect class="block" x="85" y="145" width="82" height="170" rx="5"/><rect class="block" x="220" y="150" width="88" height="142" rx="5"/><rect class="block" x="220" y="340" width="88" height="90" rx="5"/><rect class="block" x="340" y="290" width="90" height="175" rx="5"/><rect class="block" x="455" y="290" width="95" height="180" rx="5"/><rect class="block" x="575" y="125" width="105" height="155" rx="5"/><rect class="block" x="690" y="145" width="78" height="175" rx="5"/><rect class="block" x="690" y="350" width="78" height="150" rx="5"/><text class="smalltext" x="91" y="230">Edificio</text><text class="smalltext" x="230" y="220">Aulas</text><text class="smalltext" x="355" y="380">Aulas</text><text class="smalltext" x="580" y="210">Edificio</text>
+<g id="corridors"></g><g id="route-layer"></g><g id="points-layer"></g><g id="person-layer"></g>
+<text class="maptext" x="105" y="78">SALIDA CANCHA</text><text class="maptext" x="575" y="78">PUERTA PRINCIPAL</text><text class="maptext" x="610" y="570">SALIDA ESTACIONAMIENTO</text></svg></div><p class="subtle">El mono y la línea muestran el recorrido calculado en el croquis; no siguen tu movimiento real. Pulsa “Siguiente indicación” al llegar al siguiente cruce.</p><h3>Indicaciones paso a paso</h3><ol id="steps"></ol></section>
+<section><h2>Ayúdanos a hacerlo seguro e inclusivo</h2><p>Confirma en el plantel dónde están los carteles QR y por qué salidas se puede evacuar. Esta versión no usa GPS: suele ser impreciso dentro de edificios; cada QR sirve como punto conocido y no rastrea a la persona. Las instrucciones se pueden leer en voz alta o seguir en pantalla, con selección manual si no se puede escanear.</p></section>
 </main>
-
 <script>
-(function () {
-  'use strict';
-
-  /* =====================================================================
-     AJUSTES  (aquí se cambia el croquis; todo está en "unidades" de la cuadrícula)
-     x, y = esquina de arriba a la izquierda · w = ancho · h = alto
-     ===================================================================== */
-  var CONFIG = {
-    descripcion: 'Croquis visto desde arriba. Una persona camina por el pasillo, da vuelta a la derecha y sale por la puerta marcada como SALIDA.',
-
-    plano: { ancho: 72, alto: 130 },                 // tamaño total del dibujo
-    edificio: { x: 2, y: 2, w: 54, h: 126 },         // contorno del edificio
-
-    // Puerta de salida: está en la pared derecha del edificio, entre y1 y y2.
-    salida: { y1: 22, y2: 32, texto: 'SALIDA' },
-
-    // Cuartos (los bloques que no se pueden atravesar). "nombre" es opcional.
-    cuartos: [
-      { x: 4,  y: 4,  w: 16, h: 14 },
-      { x: 22, y: 4,  w: 16, h: 14 },
-      { x: 40, y: 4,  w: 14, h: 14 },
-      { x: 4,  y: 20, w: 16, h: 24 },
-      { x: 4,  y: 46, w: 16, h: 24 },
-      { x: 4,  y: 72, w: 16, h: 24 },
-      { x: 4,  y: 98, w: 16, h: 28 },
-      { x: 40, y: 36, w: 14, h: 26 },
-      { x: 40, y: 64, w: 14, h: 26 },
-      { x: 40, y: 92, w: 14, h: 34 }
-    ],
-
-    // Camino de la persona: lista de puntos [x, y]. El primero es donde empieza (donde está el cartel);
-    // el último es la puerta de salida. Las esquinas se redondean solas.
-    ruta: [[30, 118], [30, 27], [57, 27]],
-
-    velocidad: 10,       // unidades por segundo (más alto = camina más rápido)
-    radioEsquina: 6,     // qué tan redondeada es la vuelta
-    tamanoPersona: 1.4   // 1 = tamaño normal; más alto = persona más grande
-  };
-  /* ===================================================================== */
-
-  var TAU = Math.PI * 2;
-  var cv = document.getElementById('lienzo');
-  var escena = document.getElementById('escena');
-  var pista = document.getElementById('pista');
-  var ctx = cv.getContext('2d');
-  var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-
-  cv.setAttribute('aria-label', CONFIG.descripcion);
-
-  /* ---------- Ruta con esquinas redondeadas ---------- */
-  function construirRuta(pts, radio) {
-    var out = [pts[0].slice()];
-    for (var i = 1; i < pts.length - 1; i++) {
-      var a = pts[i - 1], b = pts[i], c = pts[i + 1];
-      var l1 = Math.hypot(a[0] - b[0], a[1] - b[1]), l2 = Math.hypot(c[0] - b[0], c[1] - b[1]);
-      var r = Math.min(radio, l1 / 2, l2 / 2);
-      var p1 = [b[0] + (a[0] - b[0]) / l1 * r, b[1] + (a[1] - b[1]) / l1 * r];
-      var p2 = [b[0] + (c[0] - b[0]) / l2 * r, b[1] + (c[1] - b[1]) / l2 * r];
-      out.push(p1);
-      for (var k = 1; k < 10; k++) {
-        var t = k / 10, u = 1 - t;
-        out.push([u * u * p1[0] + 2 * u * t * b[0] + t * t * p2[0], u * u * p1[1] + 2 * u * t * b[1] + t * t * p2[1]]);
-      }
-      out.push(p2);
-    }
-    out.push(pts[pts.length - 1].slice());
-    return out;
-  }
-
-  var RUTA = construirRuta(CONFIG.ruta, CONFIG.radioEsquina);
-  var CUM = [0];
-  for (var i = 1; i < RUTA.length; i++) {
-    CUM.push(CUM[i - 1] + Math.hypot(RUTA[i][0] - RUTA[i - 1][0], RUTA[i][1] - RUTA[i - 1][1]));
-  }
-  var LARGO = CUM[CUM.length - 1];
-
-  /* Posición y dirección a una distancia d del inicio */
-  function en(d) {
-    d = Math.max(0, Math.min(LARGO, d));
-    var j = 1;
-    while (j < CUM.length - 1 && CUM[j] < d) j++;
-    var a = RUTA[j - 1], b = RUTA[j], seg = (CUM[j] - CUM[j - 1]) || 1;
-    var f = (d - CUM[j - 1]) / seg;
-    return { x: a[0] + (b[0] - a[0]) * f, y: a[1] + (b[1] - a[1]) * f, ang: Math.atan2(b[1] - a[1], b[0] - a[0]) };
-  }
-
-  /* ---------- Tamaño y colores ---------- */
-  var W = 1, H = 1, dpr = 1, esc = 1, ox = 0, oy = 0;
-  function ajustar() {
-    var r = escena.getBoundingClientRect();
-    dpr = Math.min(window.devicePixelRatio || 1, 3);
-    W = Math.max(1, r.width); H = Math.max(1, r.height);
-    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
-    cv.style.width = W + 'px'; cv.style.height = H + 'px';
-    esc = Math.min(W / CONFIG.plano.ancho, H / CONFIG.plano.alto) * 0.97;
-    ox = (W - CONFIG.plano.ancho * esc) / 2;
-    oy = (H - CONFIG.plano.alto * esc) / 2;
-  }
-
-  var NOMBRES = ['fondo', 'piso', 'linea', 'cuarto', 'frente', 'pared', 'texto', 'salida', 'salida-texto', 'persona', 'cabeza', 'pelo', 'sombra'];
-  var col = {}, colT = -1e9;
-  function colores(ahora) {
-    if (ahora - colT < 400) return;
-    colT = ahora;
-    var cs = getComputedStyle(document.documentElement);
-    NOMBRES.forEach(function (n) { col[n] = cs.getPropertyValue('--' + n).trim(); });
-  }
-
-  /* ---------- Dibujo del croquis ---------- */
-  var ALTURA = 1.6;   // cuánto "sobresalen" los cuartos (relieve)
-
-  function dibujarPlano() {
-    var b = CONFIG.edificio, s = CONFIG.salida, E = b.x + b.w;
-
-    ctx.fillStyle = col.piso;
-    ctx.fillRect(b.x, b.y, b.w, b.h);
-
-    ctx.strokeStyle = col.linea; ctx.lineWidth = 0.14; ctx.beginPath();
-    for (var x = b.x + 4; x < b.x + b.w; x += 4) { ctx.moveTo(x, b.y); ctx.lineTo(x, b.y + b.h); }
-    for (var y = b.y + 4; y < b.y + b.h; y += 4) { ctx.moveTo(b.x, y); ctx.lineTo(b.x + b.w, y); }
-    ctx.stroke();
-
-    CONFIG.cuartos.forEach(function (c) {
-      ctx.fillStyle = col.sombra; ctx.fillRect(c.x + 1.4, c.y + 1.4, c.w, c.h);
-      ctx.fillStyle = col.frente; ctx.fillRect(c.x, c.y, c.w, c.h);
-      ctx.fillStyle = col.cuarto; ctx.fillRect(c.x, c.y - ALTURA, c.w, c.h);
-      ctx.strokeStyle = col.pared; ctx.lineWidth = 0.35; ctx.strokeRect(c.x, c.y - ALTURA, c.w, c.h);
-      if (c.nombre) {
-        ctx.fillStyle = col.texto; ctx.font = '700 2.4px system-ui, sans-serif';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(c.nombre, c.x + c.w / 2, c.y - ALTURA + c.h / 2);
-      }
-    });
-
-    // paredes exteriores, con hueco para la puerta
-    ctx.strokeStyle = col.pared; ctx.lineWidth = 1.5; ctx.lineJoin = 'round'; ctx.lineCap = 'butt';
-    ctx.beginPath();
-    ctx.moveTo(E, s.y1); ctx.lineTo(E, b.y); ctx.lineTo(b.x, b.y); ctx.lineTo(b.x, b.y + b.h); ctx.lineTo(E, b.y + b.h); ctx.lineTo(E, s.y2);
-    ctx.stroke();
-
-    // puerta
-    ctx.strokeStyle = col.salida; ctx.lineWidth = 2.2;
-    ctx.beginPath(); ctx.moveTo(E, s.y1); ctx.lineTo(E, s.y2); ctx.stroke();
-  }
-
-  function dibujarLetrero(ahora) {
-    var b = CONFIG.edificio, s = CONFIG.salida, E = b.x + b.w, ym = (s.y1 + s.y2) / 2;
-
-    // anillo que late alrededor de la puerta
-    var t = ((ahora / 1000) % 1.8) / 1.8;
-    ctx.strokeStyle = col.salida; ctx.lineWidth = 0.7;
-    ctx.globalAlpha = reduce ? 0.35 : (1 - t) * 0.8;
-    ctx.beginPath(); ctx.arc(E, ym, 3 + (reduce ? 3 : t * 9), 0, TAU); ctx.stroke();
-    ctx.globalAlpha = 1;
-
-    // letrero verde con texto
-    var x = E + 2.6, w = CONFIG.plano.ancho - x - 1.2, h = 7.4;
-    ctx.fillStyle = col.salida;
-    ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(x, ym - h / 2, w, h, 1.2); else ctx.rect(x, ym - h / 2, w, h);
-    ctx.fill();
-    ctx.fillStyle = col['salida-texto'];
-    ctx.font = '800 3px system-ui, -apple-system, Arial, sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(CONFIG.salida.texto, x + w / 2, ym + 0.15);
-  }
-
-  function dibujarCamino(ahora, dPersona) {
-    // puntitos a lo largo de toda la ruta
-    ctx.strokeStyle = col.salida; ctx.globalAlpha = 0.5; ctx.lineWidth = 1; ctx.lineCap = 'round';
-    ctx.setLineDash([0.01, 2.2]);
-    ctx.beginPath();
-    ctx.moveTo(RUTA[0][0], RUTA[0][1]);
-    for (var i = 1; i < RUTA.length; i++) ctx.lineTo(RUTA[i][0], RUTA[i][1]);
-    ctx.stroke();
-    ctx.setLineDash([]); ctx.globalAlpha = 1;
-
-    // flechitas que avanzan hacia la salida, solo por delante de la persona
-    var paso = 9, desfase = reduce ? 0 : ((ahora / 1000) * 5) % paso;
-    ctx.fillStyle = col.salida;
-    for (var d = desfase; d < LARGO - 2; d += paso) {
-      if (d < dPersona + 4) continue;
-      var p = en(d);
-      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.ang);
-      ctx.beginPath(); ctx.moveTo(1.3, 0); ctx.lineTo(-0.9, 1.3); ctx.lineTo(-0.9, -1.3); ctx.closePath(); ctx.fill();
-      ctx.restore();
-    }
-  }
-
-  /* La persona vista desde arriba: sombra, pies que alternan, manos, hombros y cabeza. */
-  function dibujarPersona(p, alfa, d) {
-    var fase = Math.sin(d * 1.9);
-    ctx.save(); ctx.globalAlpha = alfa; ctx.translate(p.x, p.y); ctx.scale(CONFIG.tamanoPersona, CONFIG.tamanoPersona);
-
-    ctx.fillStyle = col.sombra; ctx.beginPath(); ctx.ellipse(0.7, 1, 3.1, 2.5, 0, 0, TAU); ctx.fill();
-
-    ctx.rotate(p.ang);
-    ctx.fillStyle = col.pared;
-    ctx.beginPath(); ctx.ellipse(fase * 1.7, 1, 1.1, 0.6, 0, 0, TAU); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(-fase * 1.7, -1, 1.1, 0.6, 0, 0, TAU); ctx.fill();
-
-    ctx.fillStyle = col.cabeza;
-    ctx.beginPath(); ctx.arc(-fase * 1.2, 2.5, 0.6, 0, TAU); ctx.fill();
-    ctx.beginPath(); ctx.arc(fase * 1.2, -2.5, 0.6, 0, TAU); ctx.fill();
-
-    ctx.fillStyle = col.persona; ctx.strokeStyle = col.pared; ctx.lineWidth = 0.28;
-    ctx.beginPath(); ctx.ellipse(0, 0, 1.4, 2.6, 0, 0, TAU); ctx.fill(); ctx.stroke();
-
-    ctx.fillStyle = col.cabeza;
-    ctx.beginPath(); ctx.arc(0.3, 0, 1.4, 0, TAU); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = col.pelo;
-    ctx.beginPath(); ctx.arc(0.3, 0, 1.4, Math.PI / 2, Math.PI * 1.5); ctx.closePath(); ctx.fill();
-    ctx.restore();
-  }
-
-  /* ---------- Línea de tiempo: aparece, camina, entra por la puerta, pausa, repite ---------- */
-  var T_ENTRA = 0.7, T_PAUSA = 1.1;
-  var T_CAMINA = LARGO / CONFIG.velocidad;
-  var CICLO = T_ENTRA + T_CAMINA + T_PAUSA;
-
-  function estadoEn(t) {          // t en segundos dentro del ciclo
-    if (t < T_ENTRA) return { d: 0, alfa: t / T_ENTRA };
-    if (t < T_ENTRA + T_CAMINA) {
-      var d = (t - T_ENTRA) * CONFIG.velocidad;
-      return { d: d, alfa: Math.min(1, (LARGO - d) / 5) };      // se desvanece al cruzar la puerta
-    }
-    return { d: LARGO, alfa: 0 };
-  }
-
-  function dibujar(ahora, t) {
-    colores(ahora);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = col.fondo; ctx.fillRect(0, 0, W, H);
-    ctx.translate(ox, oy); ctx.scale(esc, esc);
-
-    var st = estadoEn(t);
-    dibujarPlano();
-    dibujarCamino(ahora, st.d);
-    dibujarLetrero(ahora);
-    if (st.alfa > 0.01) dibujarPersona(en(st.d), st.alfa, st.d);
-  }
-
-  /* ---------- Movimiento ---------- */
-  var t0 = 0, jugando = !reduce, raf = 0;
-
-  function cuadro(ahora) {
-    var t = ((ahora - t0) / 1000);
-    if (reduce) {
-      if (t >= CICLO) { jugando = false; dibujar(ahora, 0); return; }
-    } else {
-      t = t % CICLO;
-    }
-    dibujar(ahora, t);
-    if (jugando) raf = requestAnimationFrame(cuadro);
-  }
-
-  function arrancar() {
-    cancelAnimationFrame(raf);
-    t0 = performance.now(); jugando = true;
-    if (pista) pista.hidden = true;
-    raf = requestAnimationFrame(cuadro);
-  }
-
-  function reposo() {
-    cancelAnimationFrame(raf);
-    dibujar(performance.now(), T_ENTRA);        // persona quieta al inicio, camino visible
-  }
-
-  function redibujar() {
-    ajustar();
-    if (reduce && !jugando) reposo();
-    else if (!jugando) { jugando = true; arrancar(); }
-  }
-
-  if (window.ResizeObserver) new ResizeObserver(redibujar).observe(escena);
-  else window.addEventListener('resize', redibujar);
-
-  if (window.matchMedia) {
-    var mq = window.matchMedia('(prefers-color-scheme: dark)');
-    var cambio = function () { colT = -1e9; if (reduce && !jugando) reposo(); };
-    if (mq.addEventListener) mq.addEventListener('change', cambio);
-  }
-
-  ajustar();
-  if (reduce) {
-    // Con "reducir movimiento" no arranca solo: se toca para ver el recorrido una vez.
-    jugando = false;
-    escena.tabIndex = 0;
-    escena.setAttribute('role', 'button');
-    escena.setAttribute('aria-label', 'Ver el camino hacia la salida. ' + CONFIG.descripcion);
-    cv.removeAttribute('role'); cv.removeAttribute('aria-label');
-    if (pista) pista.hidden = false;
-    reposo();
-    escena.addEventListener('click', function () { if (!jugando) arrancar(); });
-    escena.addEventListener('keydown', function (e) {
-      if ((e.key === 'Enter' || e.key === ' ') && !jugando) { e.preventDefault(); arrancar(); }
-    });
-  } else {
-    arrancar();
-  }
+(function(){'use strict';
+// Grafo inicial aproximado, basado únicamente en la imagen enviada. x/y son posiciones del croquis, no coordenadas reales.
+var nodes={CAN:[105,85],W1:[180,100],W2:[180,320],W3:[245,320],W4:[245,260],W5:[320,260],W6:[390,260],CEN:[460,260],CLOW:[460,340],CLOW2:[460,470],E1:[530,260],E2:[610,260],N1:[610,170],N2:[645,150],N3:[645,85],PRI:[645,85],P1:[700,320],P2:[700,520],PARK:[700,555],QR1:[245,320],QR2:[320,260],QR3:[460,260],QR4:[610,170],QR5:[700,320],QR6:[460,340],QR7:[180,320]};
+// stairs=true sólo si se confirma físicamente; de momento no se han inventado escaleras.
+var edges=[['CAN','W1',false],['W1','W2',false],['W2','W3',false],['W3','W4',false],['W4','W5',false],['W5','W6',false],['W6','CEN',false],['CEN','E1',false],['E1','E2',false],['E2','N1',false],['N1','N2',false],['N2','N3',false],['N3','PRI',false],['E2','P1',false],['P1','P2',false],['P2','PARK',false],['CEN','CLOW',false],['CLOW','CLOW2',false],['CLOW2','P2',false],['W5','CEN',false]];
+var exits=[{node:'CAN',name:'Salida por la puerta de la cancha'},{node:'PRI',name:'Puerta principal'},{node:'PARK',name:'Salida de estacionamiento'}];
+var points=[{id:'qr-cancha',node:'W2',name:'Pasillo poniente · cerca de cancha'},{id:'qr-aulas-oeste',node:'W5',name:'Pasillo de aulas del lado poniente'},{id:'qr-centro',node:'CEN',name:'Cruce central'},{id:'qr-norte',node:'N1',name:'Pasillo norte · edificio principal'},{id:'qr-oriente',node:'P1',name:'Pasillo oriente'},{id:'qr-sur-centro',node:'CLOW',name:'Pasillo sur central'},{id:'qr-oeste-sur',node:'W3',name:'Pasillo suroeste'}];
+var svgNS='http://www.w3.org/2000/svg', $=function(id){return document.getElementById(id)};var currentPoint='qr-centro',routeNodes=[],routeExit=null,instructions=[],stepIndex=0,personFrame=0;
+function el(name,attrs,text){var e=document.createElementNS(svgNS,name);Object.keys(attrs||{}).forEach(function(k){e.setAttribute(k,attrs[k]);});if(text)e.textContent=text;return e;}
+function distance(a,b){return Math.hypot(nodes[a][0]-nodes[b][0],nodes[a][1]-nodes[b][1]);}
+function shortest(start,mode){var dist={},prev={},visited={};Object.keys(nodes).forEach(function(k){dist[k]=Infinity});dist[start]=0;while(true){var u=null;Object.keys(dist).forEach(function(k){if(!visited[k]&&(u===null||dist[k]<dist[u]))u=k;});if(u===null||dist[u]===Infinity)break;visited[u]=true;edges.forEach(function(e){if(mode==='sin-escaleras'&&e[2])return;var v=e[0]===u?e[1]:e[1]===u?e[0]:null;if(v&&dist[v]>dist[u]+distance(u,v)){dist[v]=dist[u]+distance(u,v);prev[v]=u;}});}return{dist:dist,prev:prev};}
+function pathTo(prev,start,end){var p=[end],n=end;while(n!==start){n=prev[n];if(!n)return[];p.unshift(n);}return p;}
+function pickRoute(){var point=points.find(function(p){return p.id===currentPoint})||points[2],best=null;exits.forEach(function(x){var r=shortest(point.node,$('mode').value);if(r.dist[x.node]<Infinity&&(!best||r.dist[x.node]<best.dist))best={exit:x,dist:r.dist[x.node],nodes:pathTo(r.prev,point.node,x.node)};});return best;}
+function compass(a,b){var dx=nodes[b][0]-nodes[a][0],dy=nodes[b][1]-nodes[a][1];if(Math.abs(dx)>Math.abs(dy))return dx>0?'este':'oeste';return dy>0?'sur':'norte';}
+function makeInstructions(path,exit){var out=[];if(path.length<2)return['Ya estás en la salida. Sigue las indicaciones del personal de emergencia.'];out.push('Avanza hacia el '+compass(path[0],path[1])+' por el pasillo indicado en verde.');for(var i=1;i<path.length-1;i++){var a=nodes[path[i-1]],b=nodes[path[i]],c=nodes[path[i+1]],cross=(b[0]-a[0])*(c[1]-b[1])-(b[1]-a[1])*(c[0]-b[0]);if(Math.abs(cross)>8)out.push((cross<0?'Gira a la derecha':'Gira a la izquierda')+' en el siguiente cruce y continúa hacia el '+compass(path[i],path[i+1])+'.');}out.push('Continúa hasta '+exit.name+'. Al salir, aléjate del edificio y sigue las instrucciones de emergencia.');return out;}
+function drawBase(){var layer=$('corridors');layer.replaceChildren();edges.forEach(function(e){var a=nodes[e[0]],b=nodes[e[1]];layer.appendChild(el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],class:'path-base'}));});var pointsLayer=$('points-layer');pointsLayer.replaceChildren();points.forEach(function(p){var c=nodes[p.node];pointsLayer.appendChild(el('circle',{cx:c[0],cy:c[1],r:8,class:'node'}));});exits.forEach(function(x){var c=nodes[x.node];pointsLayer.appendChild(el('circle',{cx:c[0],cy:c[1],r:13,class:'exit'}));pointsLayer.appendChild(el('text',{x:c[0]+14,y:c[1]-9,class:'smalltext'},'SALIDA'));});}
+function drawRoute(){var layer=$('route-layer');layer.replaceChildren();if(routeNodes.length<2)return;for(var i=0;i<routeNodes.length-1;i++){var a=nodes[routeNodes[i]],b=nodes[routeNodes[i+1]];layer.appendChild(el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],class:'path-route'}));}drawPerson(0);}
+function drawPerson(progress){var layer=$('person-layer');layer.replaceChildren();if(routeNodes.length<1)return;var lengths=[],total=0;for(var i=0;i<routeNodes.length-1;i++){var d=distance(routeNodes[i],routeNodes[i+1]);lengths.push(d);total+=d;}var remain=total*progress,x=nodes[routeNodes[0]][0],y=nodes[routeNodes[0]][1];for(var j=0;j<lengths.length;j++){if(remain<=lengths[j]){var t=lengths[j]?remain/lengths[j]:0,a=nodes[routeNodes[j]],b=nodes[routeNodes[j+1]];x=a[0]+(b[0]-a[0])*t;y=a[1]+(b[1]-a[1])*t;break;}remain-=lengths[j];}layer.appendChild(el('text',{x:x-10,y:y+10,class:'person','aria-hidden':'true'},'🚶'));
+}
+function animatePerson(){if(!routeNodes.length)return;var start=performance.now();function frame(now){var p=((now-start)%12000)/12000;drawPerson(p);personFrame=requestAnimationFrame(frame);}cancelAnimationFrame(personFrame);personFrame=requestAnimationFrame(frame);}
+function say(text){if(window.AndroidVoice&&window.AndroidVoice.speak){window.AndroidVoice.speak(text);return;}if('speechSynthesis'in window){window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);u.lang='es-MX';window.speechSynthesis.speak(u);}else $('status').textContent='La voz no está disponible en este dispositivo. Sigue el texto en pantalla.';}
+function showStep(){if(!instructions.length)return;$('instruction').textContent='Indicación '+(stepIndex+1)+' de '+instructions.length+': '+instructions[stepIndex];$('steps').replaceChildren();instructions.forEach(function(t,i){var li=document.createElement('li');li.textContent=t;if(i===stepIndex)li.setAttribute('aria-current','step');$('steps').appendChild(li);});}
+function calculate(autoplay){var route=pickRoute();if(!route){$('status').textContent='No encontramos una ruta en el croquis. Pide ayuda al personal del plantel.';return;}routeNodes=route.nodes;routeExit=route.exit;instructions=makeInstructions(routeNodes,routeExit);stepIndex=0;drawRoute();animatePerson();$('route-summary').textContent='Salida recomendada: '+routeExit.name+'. Distancia esquemática: '+Math.round(route.dist)+' unidades del croquis (no metros).';showStep();$('status').textContent='Ruta calculada desde '+(points.find(function(p){return p.id===currentPoint})||{}).name+'.';if(autoplay)say('Ruta de evacuación. '+instructions[0]+' Salida recomendada: '+routeExit.name+'.');}
+var sel=$('location');points.forEach(function(p){var o=document.createElement('option');o.value=p.id;o.textContent=p.name+' ('+p.id+')';sel.appendChild(o);});
+function readQuery(){var q=new URLSearchParams(location.search),p=q.get('punto')||q.get('qr');if(p&&points.some(function(x){return x.id===p;})){currentPoint=p;sel.value=p;return true;}return false;}
+readQuery();drawBase();if(currentPoint!=='qr-centro')calculate(true);else calculate(false);
+$('start').addEventListener('click',function(){currentPoint=sel.value;calculate(true);});$('speak').addEventListener('click',function(){if(instructions.length)say(instructions[stepIndex]);});$('next').addEventListener('click',function(){if(!instructions.length)return;if(stepIndex<instructions.length-1){stepIndex++;showStep();say(instructions[stepIndex]);}else say('Has llegado a la salida indicada. Aléjate del edificio y sigue las instrucciones del personal de emergencia.');});sel.addEventListener('change',function(){currentPoint=sel.value;});$('mode').addEventListener('change',function(){if(routeNodes.length)calculate(false);});
 })();
 </script>
-
 </body>
 </html>

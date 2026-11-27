@@ -1,24 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <!-- No pide ningún permiso: no usa internet, cámara, ubicación ni nada del teléfono. -->
-
+    <!-- Sin permisos de ubicación o cámara: cada QR identifica un punto fijo; el GPS interior no es fiable. -->
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:label="Ruta de evacuación"
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
-
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- QR con URI rutaevacuacion://ruta?punto=qr-centro -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="rutaevacuacion" android:host="ruta" />
+            </intent-filter>
         </activity>
-
     </application>
 </manifest>

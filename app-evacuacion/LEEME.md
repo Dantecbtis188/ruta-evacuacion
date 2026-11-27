@@ -1,65 +1,44 @@
-# Aplicación Ruta de evacuación (Android)
+# Ruta de evacuación · CBTIS 188
 
-Esta carpeta es el proyecto de una aplicación para teléfonos **Android**. Al abrirla muestra el croquis con la persona caminando hacia la salida. No necesita internet ni pide ningún permiso.
+Prototipo Android offline con croquis esquemático, cálculo de ruta en un grafo de pasillos, indicaciones en pantalla y voz española de Android TextToSpeech. Cada cartel QR representa un punto fijo de inicio: no es GPS ni seguimiento en vivo.
 
-**Importante:** el APK todavía no está armado. Se arma solo en GitHub (gratis) siguiendo los pasos de abajo. No pude compilarlo desde donde trabajo porque ahí está bloqueado el sitio que descarga las herramientas de Android.
+## Seguridad antes de probar
 
----
+El dibujo y las conexiones de pasillos son una aproximación hecha a partir de las imágenes aéreas compartidas. Las distancias son unidades esquemáticas, no metros. La accesibilidad de pasillos, puertas, rampas, obstáculos y salidas no ha sido comprobada. **No usar en una emergencia real hasta que el plantel y Protección Civil revisen el plano, recorran las rutas y validen las salidas y la accesibilidad.** Una ruta que evita los tramos marcados con escaleras no equivale a una ruta accesible certificada.
 
-## Cómo sacar el APK y el QR (con GitHub, sin instalar nada)
+## Probar la app
 
-**Paso 1. Crear el repositorio**
-1. Entren a github.com con su cuenta (o creen una).
-2. Arriba a la derecha: **+ → New repository**.
-3. Nombre: `ruta-evacuacion`. Marquen **Public** (público). Presionen **Create repository**.
+1. Abre el repositorio en GitHub y cambia a la rama `feature/navegacion-inclusiva-qr`.
+2. En **Actions**, ejecuta el workflow `Crear APK` (Run workflow) sobre esa rama y espera a que termine correctamente.
+3. Descarga el APK publicado por el flujo de trabajo. Instálalo en un teléfono Android compatible y permite la instalación del archivo si Android lo solicita.
+4. Abre la app. Elige un punto QR, pulsa **Calcular ruta y escuchar**, prueba **Repetir indicación** y **Siguiente indicación**. Activa el volumen y asegúrate de tener disponible una voz española.
 
-**Paso 2. Subir los archivos**
-1. Extraigan el zip en su computadora. Van a ver una carpeta con `app`, `gradle`, `gradlew`, `.github`, etc.
-2. En la página del repositorio, presionen **uploading an existing file**.
-3. Arrastren **todo el contenido** de la carpeta (no la carpeta en sí) a la ventana. Tienen que subirse también `.github` y `gradle`.
-4. Abajo presionen **Commit changes**.
+La aplicación no pide cámara, GPS ni internet. Los QR los puede leer la cámara o lector QR del teléfono. Si el lector ofrece abrir el enlace en navegador, acepta abrir la app.
 
-*Si la carpeta `.github` no se sube* (por ser oculta): en el repositorio presionen **Add file → Create new file**, escriban como nombre `.github/workflows/apk.yml` (al escribir `/` se crean las carpetas) y peguen adentro el contenido del archivo `apk.yml` de este proyecto. Luego **Commit changes**.
+## Enlaces/QR de prueba
 
-**Paso 3. Esperar a que GitHub arme el APK**
-1. Entren a la pestaña **Actions**.
-2. Verán una tarea llamada **Crear APK** trabajando (círculo amarillo). Tarda entre 3 y 6 minutos.
-3. Cuando salga una palomita verde, ya está. Si sale una X roja, entren a la tarea y mándenme una captura de lo que dice en rojo.
+Los QR siguientes abren la aplicación instalada y pasan la ubicación. Si todavía no está instalada, el navegador puede llevar a la página de Releases; instala la app y vuelve a escanear el QR. No es posible instalar una APK silenciosamente desde un QR, y Android puede mostrar una confirmación.
 
-**Paso 4. El enlace de descarga**
-Cuando termine, el APK queda en esta dirección (cambien `USUARIO` por su usuario de GitHub):
+Contenido de QR de prueba:
 
-`https://github.com/USUARIO/ruta-evacuacion/releases/latest/download/ruta-evacuacion.apk`
+- Cruce central: `rutaevacuacion://ruta?punto=qr-centro`
+- Pasillo poniente cerca de cancha: `rutaevacuacion://ruta?punto=qr-cancha`
+- Pasillo de aulas poniente: `rutaevacuacion://ruta?punto=qr-aulas-oeste`
+- Pasillo norte: `rutaevacuacion://ruta?punto=qr-norte`
+- Pasillo oriente: `rutaevacuacion://ruta?punto=qr-oriente`
+- Pasillo sur central: `rutaevacuacion://ruta?punto=qr-sur-centro`
+- Pasillo suroeste: `rutaevacuacion://ruta?punto=qr-oeste-sur`
 
-Pruébenla en el celular: tiene que empezar a descargar el archivo. **Esa dirección es la que va en el QR.** Mándenme su usuario y les hago el QR listo para imprimir.
+Para generar el PNG de un QR, sustituye el texto después de `data=` por el contenido del QR codificado para URL (o pega el contenido anterior en un generador de QR de confianza). Ejemplo de servicio de generación en línea, solo para crear/descargar el QR —la navegación de la app funciona sin internet—:
 
-**Paso 5. Instalarla en un celular**
-1. Escanear el QR (o abrir el enlace) y descargar el archivo.
-2. Abrir el archivo descargado. Android pedirá permiso para **instalar apps de origen desconocido**: permitirlo solo para el navegador que usaron.
-3. Si aparece un aviso de Play Protect, elegir **Instalar de todos modos**. Sale porque la app no viene de Play Store.
-4. Abrir **Ruta de evacuación**.
+`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=rutaevacuacion%3A%2F%2Fruta%3Fpunto%3Dqr-centro`
 
----
+Antes de imprimir, prueba cada QR con la app instalada en varios teléfonos Android. Para un cartel permanente se recomienda una página web HTTPS controlada por la escuela como enlace, con enlace profundo verificado y alternativa para iPhone; los esquemas personalizados no funcionan igual en todos los lectores QR.
 
-## Cosas que deben saber
+## Limitaciones importantes
 
-- **Solo Android.** Un iPhone no puede instalar un APK. Para esos teléfonos, la misma página se puede abrir en el navegador con otro QR.
-- **El APK es de prueba** (versión "debug"): funciona y se instala bien, pero no es para subir a Play Store. Para un proyecto escolar está bien.
-- **Si actualizan la app** y alguien ya la tenía instalada, puede salir un error al instalar. Se arregla desinstalando la anterior y volviendo a instalar.
-- **No pude probar el APK en un teléfono.** Revisé los archivos y la página por separado, pero la compilación real ocurre en GitHub. Si algo falla ahí, es normal que haya que ajustar un detalle: avísenme con la captura.
-
-## Cómo cambiar el croquis
-
-La página está en `app/src/main/assets/index.html`. Al principio del bloque `<script>` hay un cuadro llamado **AJUSTES** con los cuartos, la puerta, el camino de la persona, la velocidad y el tamaño. Después de cambiarlo, suban el archivo otra vez a GitHub (**Add file → Upload files**, mismo nombre y misma carpeta) y se arma un APK nuevo solo.
-
-## Qué hay en cada parte (por si el profesor pregunta)
-
-| Archivo | Para qué sirve |
-|---|---|
-| `app/src/main/assets/index.html` | La página con la persona caminando. Va guardada dentro de la app. |
-| `app/src/main/java/.../MainActivity.java` | La única pantalla de la app: abre esa página. |
-| `app/src/main/AndroidManifest.xml` | Datos de la app: nombre, ícono y pantalla inicial. No pide permisos. |
-| `app/src/main/res/` | El ícono (puerta verde con flecha). |
-| `app/build.gradle`, `build.gradle`, `settings.gradle` | Instrucciones para armar la app. |
-| `gradlew`, `gradle/` | Herramienta que descarga y ejecuta Gradle (el armador). |
-| `.github/workflows/apk.yml` | Le dice a GitHub que arme el APK y lo publique con enlace fijo. |
+- El teléfono no obtiene posición interior continua. Cada QR fija el inicio; si la persona se mueve, debe escanear el siguiente QR o pulsar las indicaciones manualmente.
+- La persona animada ilustra la ruta calculada, no representa el seguimiento de la persona real.
+- El mapa, las ubicaciones de QR y el grafo se editan en `app/src/main/assets/index.html`. Actualiza los nodos y conexiones solo después de comprobarlos en el plantel.
+- El texto a voz usa el motor TTS instalado en el dispositivo. Si no está disponible, las mismas indicaciones permanecen visibles.
+- La rama de desarrollo es `feature/navegacion-inclusiva-qr`; no mezcles el APK de prueba con instrucciones de evacuación oficiales sin validación.
