@@ -21,6 +21,8 @@ import android.webkit.WebViewClient;
  * Además hace dos cosas que la página no puede hacer sola:
  *  1) Le permite usar la cámara (para leer el QR del cartel), pidiendo el permiso al usuario.
  *  2) Abre el marcador del teléfono cuando se toca "Llamar al 911".
+ *  3) Recibe el cartel del QR: cuando se abre un enlace del cartel (https://dantecbtis188.github.io/ruta-evacuacion/?c=cartel-5
+ *     o cbtis188://cartel/cartel-5), abre la página de la app con ese cartel y la voz empieza a guiar.
  */
 public class MainActivity extends Activity {
 
@@ -81,7 +83,35 @@ public class MainActivity extends Activity {
         });
 
         setContentView(web);
-        web.loadUrl("file:///android_asset/index.html");
+        web.loadUrl(direccionInicial(getIntent()));
+    }
+
+    /** Si la app se abrió desde un QR, trae el cartel; si no, abre la pantalla de inicio. */
+    private String direccionInicial(Intent intento) {
+        String base = "file:///android_asset/index.html";
+        String cartel = cartelDe(intento);
+        return cartel == null ? base : base + "#" + Uri.encode(cartel);
+    }
+
+    /** Saca el nombre del cartel de un enlace (?c=cartel-5, ?p=cartel-5 o cbtis188://cartel/cartel-5). */
+    private String cartelDe(Intent intento) {
+        if (intento == null || intento.getData() == null) return null;
+        Uri u = intento.getData();
+        String id = u.getQueryParameter("c");
+        if (id == null) id = u.getQueryParameter("p");
+        if (id == null && "cbtis188".equals(u.getScheme())) id = u.getLastPathSegment();
+        return (id == null || id.length() == 0) ? null : id;
+    }
+
+    /** La app ya estaba abierta y escanean otro cartel: se cambia el cartel sin reiniciar. */
+    @Override
+    protected void onNewIntent(Intent intento) {
+        super.onNewIntent(intento);
+        setIntent(intento);
+        String cartel = cartelDe(intento);
+        if (cartel != null && web != null) {
+            web.loadUrl("file:///android_asset/index.html#" + Uri.encode(cartel));
+        }
     }
 
     @Override

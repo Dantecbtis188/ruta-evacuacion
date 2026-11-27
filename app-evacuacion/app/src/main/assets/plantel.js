@@ -1,115 +1,155 @@
 /* =====================================================================================
-   MAPA DEL PLANTEL  (AQUÍ SE CAMBIA TODO LO QUE DEPENDE DE LA ESCUELA)
+   MAPA DEL CBTis 188  (AQUÍ SE CAMBIA TODO LO QUE DEPENDE DE LA ESCUELA)
 
-   *** DATOS DE EJEMPLO. NO son los del CBTis 188. Hay que cambiarlos por los reales. ***
+   Hecho con la foto aérea (plano.jpg) y los pasillos que ustedes marcaron en amarillo.
+   Los pasillos y las 3 salidas son exactamente los que marcaron. No se agregó ninguno.
 
    Cómo está hecho (idea simple): el plantel es una red de PUNTOS unidos por CAMINOS.
-   - Cada punto tiene un nombre corto (id), su lugar en el plano (x, y en METROS) y el piso.
-   - Cada camino une dos puntos. Su largo se calcula solo con los metros del plano.
-   - El plano se mide en metros: x crece hacia la derecha (este), y crece hacia abajo (sur).
-     "Arriba" del dibujo es el norte, que vale 0 grados. Este = 90, sur = 180, oeste = 270.
+   - Cada punto tiene su lugar en la FOTO: px = pixeles hacia la derecha, py = pixeles hacia abajo
+     (la foto mide 1600 x 1200).
+   - Cada camino une dos puntos. Su largo en metros se calcula solo con la ESCALA de abajo.
+   - Rumbos: arriba de la foto es el norte (0 grados). Este = 90, sur = 180, oeste = 270.
 
    Tipos de punto (tipo):
-     'cartel'    un cartel con QR. Aquí empieza la ruta. Necesita "mira": hacia dónde mira una
-                 persona cuando lee el cartel (en grados: 0 arriba, 90 derecha, 180 abajo, 270 izquierda).
-     'cruce'     una esquina o cruce de pasillos (sirve para dar la vuelta).
-     'escalera'  inicio o final de una escalera.
-     'rampa'     inicio o final de una rampa.
-     'salida'    una salida del edificio. "reunion" = el punto de reunión de afuera.
-     'refugio'   área de resguardo para quien no puede usar escaleras (solo se usa si no hay otra salida).
+     'cartel'    un cartel con QR. Aquí empieza la ruta. "mira" = hacia dónde mira una persona
+                 cuando lee el cartel (0 arriba, 90 derecha, 180 abajo, 270 izquierda).
+     'cruce'     esquina, cruce o final de pasillo (sirve para dar la vuelta).
+     'salida'    una salida del plantel. "reunion" = punto de reunión de afuera (si se quiere decir).
+     'escalera' / 'rampa' / 'refugio'  para cuando haya pisos con escaleras o rampas.
 
-   Cada punto puede llevar "nombre": cómo se dice en voz alta ("la escalera", "el cruce de pasillos").
+   *** DOS COSAS QUE HAY QUE CONFIRMAR ***
+   1) ESCALA: se calculó a ojo (1 pixel de la foto = 0.1 metros). Para corregirla, midan en la
+      escuela una distancia real que se vea en la foto (por ejemplo, el largo de un edificio) y
+      cambien el número de abajo:  ESCALA = metros reales / pixeles de la foto.
+   2) CARTELES: las posiciones y hacia dónde mira cada uno son un ejemplo. Cámbienlas por las reales.
    ===================================================================================== */
 
+var ESCALA = 0.1;   // metros que mide cada pixel de la foto (¡confirmar!)
+
 var PLANTEL = {
-  nombre: 'CBTis 188 (DATOS DE EJEMPLO)',
+  nombre: 'CBTis 188',
   telefono: '911',
   paso_m: 0.7,            // largo promedio de un paso, en metros (sirve para contar pasos)
-  precaucion: 'Mantenga la calma. No corra. No use el elevador.',
-  aviso: 'Prototipo escolar con datos de ejemplo. En una emergencia real, siga las indicaciones del personal y de Protección Civil.',
+  escala: ESCALA,
+  precaucion: 'Mantenga la calma. No corra.',
+  aviso: 'Prototipo escolar. Las rutas deben revisarse con la dirección y Protección Civil. En una emergencia real, siga las indicaciones del personal.',
 
-  /* ---------- Pisos: contorno del edificio y cuartos (solo para dibujar el croquis) ---------- */
+  /* ---------- Foto del plantel (solo para dibujar el croquis) ---------- */
   pisos: {
-    0: {
-      nombre: 'Planta baja',
-      edificio: { x: 1, y: 1, w: 30, h: 61 },
-      cuartos: [
-        { n: 'Dirección',    x: 1,  y: 1,  w: 12, h: 6 },
-        { n: 'Cooperativa',  x: 15, y: 1,  w: 16, h: 6 },
-        { n: 'Aula 1',       x: 1,  y: 12, w: 9,  h: 9 },
-        { n: 'Escalera',     x: 1,  y: 22, w: 9,  h: 6 },
-        { n: 'Aula 2',       x: 1,  y: 30, w: 9,  h: 13 },
-        { n: 'Aula 3',       x: 1,  y: 45, w: 9,  h: 16 },
-        { n: 'Biblioteca',   x: 15, y: 12, w: 15, h: 8 },
-        { n: 'Rampa',        x: 15, y: 22, w: 9,  h: 6 },
-        { n: 'Aula 4',       x: 15, y: 30, w: 15, h: 13 },
-        { n: 'Laboratorio',  x: 15, y: 45, w: 15, h: 16 }
-      ]
-    },
-    1: {
-      nombre: 'Primer piso',
-      edificio: { x: 1, y: 1, w: 30, h: 61 },
-      cuartos: [
-        { n: 'Sala de maestros', x: 1,  y: 1,  w: 12, h: 6 },
-        { n: 'Aula 9',       x: 15, y: 1,  w: 16, h: 6 },
-        { n: 'Aula 5',       x: 1,  y: 12, w: 9,  h: 9 },
-        { n: 'Escalera',     x: 1,  y: 22, w: 9,  h: 6 },
-        { n: 'Aula 6',       x: 1,  y: 30, w: 9,  h: 13 },
-        { n: 'Aula 7',       x: 1,  y: 45, w: 9,  h: 16 },
-        { n: 'Cómputo',      x: 15, y: 12, w: 15, h: 8 },
-        { n: 'Rampa',        x: 15, y: 22, w: 9,  h: 6 },
-        { n: 'Aula 8',       x: 15, y: 30, w: 15, h: 13 },
-        { n: 'Taller',       x: 15, y: 45, w: 15, h: 16 }
-      ]
-    }
+    0: { nombre: 'Plantel', foto: 'plano.jpg', w: 1600, h: 1200 }
   },
 
   /* ---------- Puntos ---------- */
   nodos: {
-    /* planta baja */
-    'pb-sur':       { piso: 0, x: 12.5, y: 59,  tipo: 'cartel', mira: 180, nombre: 'el cartel del pasillo sur', lugar: 'Planta baja · Pasillo sur' },
-    'pb-aulas':     { piso: 0, x: 12.5, y: 36,  tipo: 'cartel', mira: 270, nombre: 'el cartel de las aulas',    lugar: 'Planta baja · Frente a las aulas' },
-    'pb-este':      { piso: 0, x: 24,   y: 9.5, tipo: 'cartel', mira: 0,   nombre: 'el cartel del pasillo este', lugar: 'Planta baja · Pasillo este' },
-    'pb-cruce-esc': { piso: 0, x: 12.5, y: 25,  tipo: 'cruce',  nombre: 'la escalera y la rampa' },
-    'pb-cruce':     { piso: 0, x: 12.5, y: 9.5, tipo: 'cruce',  nombre: 'el cruce de pasillos' },
-    'pb-escalera':  { piso: 0, x: 5.5,  y: 25,  tipo: 'escalera', nombre: 'la escalera' },
-    'pb-rampa':     { piso: 0, x: 19.5, y: 25,  tipo: 'rampa',    nombre: 'la rampa' },
-    'salida-oeste': { piso: 0, x: 1,    y: 9.5, tipo: 'salida', nombre: 'la salida oeste', reunion: 'el estacionamiento' },
-    'salida-este':  { piso: 0, x: 31,   y: 9.5, tipo: 'salida', nombre: 'la salida este',  reunion: 'la cancha principal' },
-
-    /* primer piso */
-    'p1-sur':       { piso: 1, x: 12.5, y: 59,  tipo: 'cartel', mira: 180, nombre: 'el cartel del pasillo sur', lugar: 'Primer piso · Pasillo sur' },
-    'p1-lab':       { piso: 1, x: 12.5, y: 40,  tipo: 'cartel', mira: 270, nombre: 'el cartel de las aulas',    lugar: 'Primer piso · Frente a las aulas' },
-    'p1-norte':     { piso: 1, x: 12.5, y: 10,  tipo: 'cartel', mira: 0,   nombre: 'el cartel del pasillo norte', lugar: 'Primer piso · Pasillo norte' },
-    'p1-cruce-esc': { piso: 1, x: 12.5, y: 25,  tipo: 'cruce',  nombre: 'la escalera y la rampa' },
-    'p1-escalera':  { piso: 1, x: 5.5,  y: 25,  tipo: 'escalera', nombre: 'la escalera' },
-    'p1-rampa':     { piso: 1, x: 19.5, y: 25,  tipo: 'rampa',    nombre: 'la rampa' }
+    'p-a': { px: 380, py: 266, tipo: 'cruce', nombre: 'la esquina' },
+    'p-b': { px: 319, py: 279, tipo: 'cruce', nombre: 'la esquina' },
+    'p-c': { px: 312, py: 711, tipo: 'cruce', nombre: 'la esquina' },
+    'p-d': { px: 453, py: 718, tipo: 'cruce', nombre: 'la esquina' },
+    'p-e': { px: 466, py: 681, tipo: 'cruce', nombre: 'el cruce de pasillos' },
+    'p-f': { px: 468, py: 553, tipo: 'cruce', nombre: 'la esquina' },
+    'p-g': { px: 672, py: 681, tipo: 'cruce', nombre: 'el cruce de pasillos' },
+    'p-h': { px: 684, py: 563, tipo: 'cruce', nombre: 'el cruce de pasillos' },
+    'p-i': { px: 680, py: 957, tipo: 'cruce', nombre: 'el final del pasillo' },
+    'p-j': { px: 852, py: 560, tipo: 'cruce', nombre: 'el cruce de pasillos' },
+    'p-k': { px: 848, py: 449, tipo: 'cruce', nombre: 'el final del pasillo' },
+    'p-l': { px: 1128, py: 563, tipo: 'cruce', nombre: 'el cruce de pasillos' },
+    'p-m': { px: 1132, py: 335, tipo: 'cruce', nombre: 'la esquina' },
+    'p-n': { px: 1237, py: 335, tipo: 'cruce', nombre: 'la esquina' },
+    'p-o': { px: 1297, py: 328, tipo: 'cruce', nombre: 'el cruce de pasillos' },
+    'p-p': { px: 1339, py: 333, tipo: 'cruce', nombre: 'la esquina' },
+    'p-q': { px: 1298, py: 265, tipo: 'cruce', nombre: 'la esquina' },
+    'p-r': { px: 1135, py: 608, tipo: 'cruce', nombre: 'el cruce de pasillos' },
+    'p-s': { px: 1129, py: 705, tipo: 'cruce', nombre: 'el cruce de pasillos' },
+    'p-t': { px: 1132, py: 960, tipo: 'cruce', nombre: 'la esquina' },
+    'p-u': { px: 1145, py: 1013, tipo: 'cruce', nombre: 'la esquina' },
+    'p-v': { px: 1117, py: 1029, tipo: 'cruce', nombre: 'la esquina' },
+    'p-w': { px: 917, py: 1028, tipo: 'cruce', nombre: 'la esquina' },
+    'p-x': { px: 902, py: 938, tipo: 'cruce', nombre: 'la esquina' },
+    'p-y': { px: 908, py: 705, tipo: 'cruce', nombre: 'la esquina' },
+    'p-z': { px: 1318, py: 622, tipo: 'cruce', nombre: 'la esquina' },
+    'p-A': { px: 1341, py: 622, tipo: 'cruce', nombre: 'el cruce de pasillos' },
+    'p-B': { px: 1334, py: 800, tipo: 'cruce', nombre: 'el cruce de pasillos' },
+    'p-C': { px: 1289, py: 809, tipo: 'cruce', nombre: 'la esquina' },
+    'p-D': { px: 1403, py: 808, tipo: 'cruce', nombre: 'la esquina' },
+    'p-E': { px: 1395, py: 1043, tipo: 'cruce', nombre: 'la esquina' },
+    'p-F': { px: 1365, py: 1046, tipo: 'cruce', nombre: 'la esquina' },
+    'p-G': { px: 1296, py: 919, tipo: 'cruce', nombre: 'la esquina' },
+    'p-Hh': { px: 1291, py: 1020, tipo: 'cruce', nombre: 'la esquina' },
+    'salida-cancha': { px: 370, py: 198, tipo: 'salida', nombre: 'la salida por la puerta de la cancha' },
+    'salida-principal': { px: 1227, py: 205, tipo: 'salida', nombre: 'la puerta principal' },
+    'salida-estacionamiento': { px: 1329, py: 1061, tipo: 'salida', nombre: 'la salida del estacionamiento' },
+    'cartel-1': { px: 315, py: 540, tipo: 'cartel', mira: 90, lugar: 'Cartel 1 · pasillo oeste, junto al edificio de la izquierda' },
+    'cartel-2': { px: 467, py: 615, tipo: 'cartel', mira: 270, lugar: 'Cartel 2 · pasillo entre los dos primeros edificios' },
+    'cartel-3': { px: 580, py: 681, tipo: 'cartel', mira: 0, lugar: 'Cartel 3 · pasillo al sur del segundo edificio' },
+    'cartel-4': { px: 676, py: 820, tipo: 'cartel', mira: 270, lugar: 'Cartel 4 · pasillo junto al edificio de techo naranja' },
+    'cartel-5': { px: 800, py: 561, tipo: 'cartel', mira: 180, lugar: 'Cartel 5 · pasillo central, lado oeste' },
+    'cartel-6': { px: 1000, py: 562, tipo: 'cartel', mira: 180, lugar: 'Cartel 6 · pasillo central, lado este' },
+    'cartel-7': { px: 1130, py: 820, tipo: 'cartel', mira: 90, lugar: 'Cartel 7 · pasillo junto a los edificios del centro-derecha' },
+    'cartel-8': { px: 1340, py: 480, tipo: 'cartel', mira: 90, lugar: 'Cartel 8 · pasillo del edificio del lado derecho' },
+    'cartel-9': { px: 1190, py: 335, tipo: 'cartel', mira: 180, lugar: 'Cartel 9 · pasillo norte, frente al edificio gris' },
+    'cartel-10': { px: 1399, py: 930, tipo: 'cartel', mira: 270, lugar: 'Cartel 10 · lado del estacionamiento' },
+    'cartel-11': { px: 905, py: 820, tipo: 'cartel', mira: 90, lugar: 'Cartel 11 · pasillo techado entre edificios' },
   },
 
-  /* ---------- Caminos ----------
-     Pasillos: solo se escriben los dos puntos (el largo se calcula).
-     Escaleras y rampas: se escribe "m" (metros que se caminan) y "rumbo" (hacia dónde mira la persona
-     al subir de a hacia b; al bajar se invierte solo).                                           */
+  /* ---------- Caminos (pasillos que se pueden caminar) ----------
+     Solo se escriben los dos puntos; el largo se calcula. */
   aristas: [
-    /* planta baja */
-    { a: 'pb-sur',       b: 'pb-aulas' },
-    { a: 'pb-aulas',     b: 'pb-cruce-esc' },
-    { a: 'pb-cruce-esc', b: 'pb-cruce' },
-    { a: 'pb-cruce',     b: 'salida-oeste' },
-    { a: 'pb-cruce',     b: 'pb-este' },
-    { a: 'pb-este',      b: 'salida-este' },
-    { a: 'pb-cruce-esc', b: 'pb-escalera' },
-    { a: 'pb-cruce-esc', b: 'pb-rampa' },
-
-    /* primer piso */
-    { a: 'p1-sur',       b: 'p1-lab' },
-    { a: 'p1-lab',       b: 'p1-cruce-esc' },
-    { a: 'p1-cruce-esc', b: 'p1-norte' },
-    { a: 'p1-cruce-esc', b: 'p1-escalera' },
-    { a: 'p1-cruce-esc', b: 'p1-rampa' },
-
-    /* entre pisos */
-    { a: 'pb-escalera', b: 'p1-escalera', tipo: 'escalera', m: 9,  rumbo: 0 },
-    { a: 'pb-rampa',    b: 'p1-rampa',    tipo: 'rampa',    m: 24, rumbo: 0 }
+    { a: 'salida-cancha', b: 'p-a' },
+    { a: 'p-a', b: 'p-b' },
+    { a: 'p-c', b: 'p-d' },
+    { a: 'p-d', b: 'p-e' },
+    { a: 'p-f', b: 'p-h' },
+    { a: 'p-h', b: 'p-g' },
+    { a: 'p-j', b: 'p-k' },
+    { a: 'p-l', b: 'p-m' },
+    { a: 'p-n', b: 'p-o' },
+    { a: 'p-o', b: 'p-p' },
+    { a: 'p-o', b: 'p-q' },
+    { a: 'p-q', b: 'salida-principal' },
+    { a: 'p-l', b: 'p-r' },
+    { a: 'p-r', b: 'p-s' },
+    { a: 'p-t', b: 'p-u' },
+    { a: 'p-u', b: 'p-v' },
+    { a: 'p-v', b: 'p-w' },
+    { a: 'p-w', b: 'p-x' },
+    { a: 'p-y', b: 'p-s' },
+    { a: 'p-r', b: 'p-z' },
+    { a: 'p-z', b: 'p-A' },
+    { a: 'p-A', b: 'p-B' },
+    { a: 'p-B', b: 'p-C' },
+    { a: 'p-B', b: 'p-D' },
+    { a: 'p-E', b: 'p-F' },
+    { a: 'p-F', b: 'salida-estacionamiento' },
+    { a: 'p-C', b: 'p-G' },
+    { a: 'p-G', b: 'p-Hh' },
+    { a: 'p-Hh', b: 'salida-estacionamiento' },
+    { a: 'p-b', b: 'cartel-1' },
+    { a: 'cartel-1', b: 'p-c' },
+    { a: 'p-e', b: 'cartel-2' },
+    { a: 'cartel-2', b: 'p-f' },
+    { a: 'p-e', b: 'cartel-3' },
+    { a: 'cartel-3', b: 'p-g' },
+    { a: 'p-g', b: 'cartel-4' },
+    { a: 'cartel-4', b: 'p-i' },
+    { a: 'p-h', b: 'cartel-5' },
+    { a: 'cartel-5', b: 'p-j' },
+    { a: 'p-j', b: 'cartel-6' },
+    { a: 'cartel-6', b: 'p-l' },
+    { a: 'p-s', b: 'cartel-7' },
+    { a: 'cartel-7', b: 'p-t' },
+    { a: 'p-p', b: 'cartel-8' },
+    { a: 'cartel-8', b: 'p-A' },
+    { a: 'p-m', b: 'cartel-9' },
+    { a: 'cartel-9', b: 'p-n' },
+    { a: 'p-D', b: 'cartel-10' },
+    { a: 'cartel-10', b: 'p-E' },
+    { a: 'p-x', b: 'cartel-11' },
+    { a: 'cartel-11', b: 'p-y' },
   ]
 };
+
+/* Pasa los pixeles de la foto a metros (no tocar). */
+Object.keys(PLANTEL.nodos).forEach(function (id) {
+  var n = PLANTEL.nodos[id];
+  n.piso = 0; n.x = n.px * ESCALA; n.y = n.py * ESCALA;
+});

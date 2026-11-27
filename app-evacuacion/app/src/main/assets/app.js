@@ -18,7 +18,7 @@
   }
 
   /* ---------- Estado de la ruta ---------- */
-  var S = { plan: null, idx: 0, d: 0, sim: null, detector: null, wake: null, ver: null, px: null };
+  var S = { plan: null, idx: 0, d: 0, sim: null, detector: null, wake: null, ver: null, px: null, cam: null };
   var reducir = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* ---------- Voz ---------- */
@@ -93,7 +93,7 @@
       var t = plan.error + ' Llame al ' + P.telefono + ' o pida ayuda a una persona cercana.';
       msgInicio(t); hablar(t); ver('inicio'); return;
     }
-    S.plan = plan; S.idx = 0; S.d = 0; S.px = null;
+    S.plan = plan; S.idx = 0; S.d = 0; S.px = null; S.cam = null;
     msgInicio('');
     ver('nav');
     S.detector = Motor.detectorPasos();
@@ -111,7 +111,7 @@
       anunciar(S.idx, 'Cartel confirmado. Va por buen camino.');
       actualizar();
     } else if (r.plan && !r.plan.error) {
-      S.plan = r.plan; S.idx = 0; S.d = 0; S.px = null;
+      S.plan = r.plan; S.idx = 0; S.d = 0; S.px = null; S.cam = null;
       anunciar(0, 'Cartel nuevo. Recalculando la ruta. ' + introduccion());
       actualizar(true);
     } else { iniciar(id); }
@@ -171,9 +171,10 @@
   /* ---------- Qué dice el QR ---------- */
   function idDeCodigo(texto) {
     var t = String(texto || '').trim(), id = null, m;
-    if ((m = t.match(/^cbtis188:(.+)$/i))) id = m[1];
-    else if ((m = t.match(/[?&]p=([^&#]+)/))) id = decodeURIComponent(m[1]);
-    else if ((m = t.match(/#([^#]+)$/))) id = decodeURIComponent(m[1]);
+    function dec(x) { try { return decodeURIComponent(x); } catch (e) { return x; } }
+    if ((m = t.match(/^cbtis188:(?:\/\/cartel\/|\/\/)?([^?#\s]+)/i))) id = dec(m[1]);          // cbtis188:ID  o  cbtis188://cartel/ID
+    else if ((m = t.match(/[?&](?:c|p)=([^&#]+)/))) id = dec(m[1]);                              // ...?c=ID  (enlace del QR)  o  ?p=ID
+    else if ((m = t.match(/#([^#]+)$/))) id = dec(m[1]);                                          // ...#ID
     else id = t;
     id = (id || '').trim();
     return (P.nodos[id] && P.nodos[id].tipo === 'cartel') ? id : null;
@@ -212,81 +213,110 @@
     });
   }
 
-  /* ---------- Croquis ---------- */
+  /* ---------- Croquis: foto aérea + ruta + monito caminando ---------- */
+  var E = P.escala || 0.1;                       // metros por pixel de la foto
+  var FOTO = new Image(), fotoLista = false;
+  FOTO.onload = function () { fotoLista = true; dibujar(); };
+  FOTO.src = P.pisos[0].foto;
   function colores() {
     var cs = getComputedStyle(document.documentElement), f = function (n) { return cs.getPropertyValue(n).trim(); };
-    return { cuarto: f('--cuarto'), borde: f('--cuarto-borde'), texto: f('--texto'), suave: f('--suave'), ruta: f('--ruta'), salida: f('--salida'), persona: f('--persona'), fondo: f('--tarjeta'), acento: f('--acento'), sobre: f('--sobre-acento') };
+    return { texto: f('--texto'), ruta: f('--ruta'), salida: f('--salida'), persona: f('--persona'), fondo: f('--tarjeta'), acento: f('--acento'), sobre: f('--sobre-acento'), foco: f('--foco') };
+  }
+  /* texto con borde para que se lea sobre la foto */
+  function rotulo(c, t, x, y, K, fuente) {
+    c.font = fuente; c.lineWidth = 5; c.strokeStyle = K.fondo; c.strokeText(t, x, y); c.fillStyle = K.texto; c.fillText(t, x, y);
+  }
+  /* El monito visto desde arriba: hombros, brazos y pies que se mueven al caminar. Mira hacia "arriba" (se gira antes). */
+  function monito(c, K, fase, caminando) {
+    var sw = caminando ? Math.sin(fase) : 0;
+    c.fillStyle = K.fondo; c.beginPath(); c.arc(0, 0, 25, 0, 7); c.fill();           // halo para que destaque sobre la foto
+    c.strokeStyle = K.persona; c.lineCap = 'round';
+    c.lineWidth = 6; c.beginPath(); c.moveTo(-8, -sw * 9 + 6); c.lineTo(-8, -sw * 9 - 4); c.moveTo(8, sw * 9 + 6); c.lineTo(8, sw * 9 - 4); c.stroke();   // piernas
+    c.lineWidth = 5; c.beginPath(); c.moveTo(-13, 0); c.lineTo(-17, sw * 9); c.moveTo(13, 0); c.lineTo(17, -sw * 9); c.stroke();                         // brazos
+    c.fillStyle = K.persona; c.beginPath(); c.ellipse(0, 0, 13, 8, 0, 0, 7); c.fill();                                                                // hombros
+    c.fillStyle = K.fondo; c.beginPath(); c.arc(0, -1, 7.5, 0, 7); c.fill();
+    c.fillStyle = K.persona; c.beginPath(); c.arc(0, -1, 6, 0, 7); c.fill();                                                                           // cabeza
+    c.beginPath(); c.moveTo(0, -36); c.lineTo(8, -26); c.lineTo(-8, -26); c.closePath(); c.fill();                                                    // flecha: hacia dónde va
   }
   function dibujar() {
     var cv = $('croquis'); if (!S.plan || cv.offsetParent === null) return;
     var dpr = window.devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
     if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
     var c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
-    var K = colores(), pos = Motor.posEn(S.plan, S.d), piso = P.pisos[pos.piso], ed = piso.edificio;
-    var m = 8, esc = Math.min((W - 2 * m) / (ed.w + 2), (H - 2 * m) / (ed.h + 2));
-    var ox = (W - ed.w * esc) / 2 - ed.x * esc, oy = (H - ed.h * esc) / 2 - ed.y * esc;
-    var X = function (x) { return ox + x * esc; }, Y = function (y) { return oy + y * esc; };
+    var K = colores(), pos = Motor.posEn(S.plan, S.d), fw = P.pisos[0].w, fh = P.pisos[0].h;
+    var px = pos.x / E, py = pos.y / E, dst = P.nodos[S.plan.destino.id], ex = dst.px, ey = dst.py;
 
-    /* edificio y cuartos */
-    c.lineWidth = 3; c.strokeStyle = K.borde; c.fillStyle = K.fondo;
-    c.fillRect(X(ed.x), Y(ed.y), ed.w * esc, ed.h * esc); c.strokeRect(X(ed.x), Y(ed.y), ed.w * esc, ed.h * esc);
-    c.lineWidth = 1.5; c.font = '600 ' + Math.max(9, Math.min(12, esc * 1.1)) + 'px system-ui,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
-    piso.cuartos.forEach(function (q) {
-      c.fillStyle = K.cuarto; c.fillRect(X(q.x), Y(q.y), q.w * esc, q.h * esc); c.strokeRect(X(q.x), Y(q.y), q.w * esc, q.h * esc);
-      c.fillStyle = K.suave; c.fillText(q.n, X(q.x + q.w / 2), Y(q.y + q.h / 2));
-    });
+    /* cámara: encuadra al monito y a la salida (y lo que queda de la ruta) */
+    var x0 = Math.min(px, ex), x1 = Math.max(px, ex), y0 = Math.min(py, ey), y1 = Math.max(py, ey);
+    S.plan.puntos.forEach(function (q) { if (q.d >= S.d) { x0 = Math.min(x0, q.x / E); x1 = Math.max(x1, q.x / E); y0 = Math.min(y0, q.y / E); y1 = Math.max(y1, q.y / E); } });
+    var mg = 110, bw = Math.max(x1 - x0 + 2 * mg, 260), bh = Math.max(y1 - y0 + 2 * mg, 260);
+    var tesc = Math.max(0.2, Math.min(W / bw, H / bh, 0.9)), tcx = (x0 + x1) / 2, tcy = (y0 + y1) / 2;
+    var cam = S.cam;
+    if (!cam || reducir) cam = S.cam = { s: tesc, x: tcx, y: tcy };
+    cam.s += (tesc - cam.s) * 0.15; cam.x += (tcx - cam.x) * 0.15; cam.y += (tcy - cam.y) * 0.15;
+    var X = function (u) { return W / 2 + (u - cam.x) * cam.s; }, Y = function (v) { return H / 2 + (v - cam.y) * cam.s; };
+    var cambia = Math.abs(tesc - cam.s) > 0.002 || Math.abs(tcx - cam.x) > 0.6 || Math.abs(tcy - cam.y) > 0.6;
 
-    /* carteles y salidas de este piso */
-    Object.keys(P.nodos).forEach(function (id) {
-      var n = P.nodos[id]; if (n.piso !== pos.piso) return;
-      if (n.tipo === 'cartel') { c.fillStyle = K.texto; c.fillRect(X(n.x) - 5, Y(n.y) - 5, 10, 10); }
-      if (n.tipo === 'salida') {
-        c.fillStyle = K.salida; var sx = X(n.x), sy = Y(n.y);
-        c.fillRect(sx - 9, sy - 9, 18, 18);
-        c.fillStyle = K.sobre; c.font = '700 11px system-ui,sans-serif'; c.fillText('→', sx, sy);
-        c.fillStyle = K.salida; c.font = '800 11px system-ui,sans-serif';
-        c.fillText('SALIDA', sx, sy + (n.y < ed.y + ed.h / 2 ? 18 : -18));
-      }
-    });
+    /* foto */
+    c.fillStyle = K.fondo; c.fillRect(0, 0, W, H);
+    if (fotoLista) c.drawImage(FOTO, X(0), Y(0), fw * cam.s, fh * cam.s);
 
-    /* ruta: línea gruesa con borde y flechitas (se ve sin depender del color) */
-    var pts = S.plan.puntos, i;
+    /* ruta: lo que ya caminó (delgado, gris) y lo que falta (grueso, punteado, con flechitas) */
+    var pts = S.plan.puntos, falta = [[px, py]], hecha = [pts[0]], i;
+    for (i = 0; i < pts.length; i++) { if (pts[i].d > S.d + 1e-6) falta.push([pts[i].x / E, pts[i].y / E]); else hecha.push(pts[i]); }
     c.lineCap = 'round'; c.lineJoin = 'round';
-    for (var pass = 0; pass < 2; pass++) {
-      c.beginPath(); var abierto = false;
-      for (i = 0; i < pts.length; i++) {
-        if (pts[i].piso !== pos.piso) { abierto = false; continue; }
-        if (!abierto || (i > 0 && pts[i - 1].piso !== pts[i].piso)) { c.moveTo(X(pts[i].x), Y(pts[i].y)); abierto = true; } else c.lineTo(X(pts[i].x), Y(pts[i].y));
-      }
-      c.setLineDash(pass ? [10, 8] : []); c.lineWidth = pass ? 5 : 9; c.strokeStyle = pass ? K.ruta : K.fondo; c.stroke();
+    if (S.d > 0.5) {
+      c.beginPath(); c.moveTo(X(pts[0].x / E), Y(pts[0].y / E));
+      for (i = 1; i < pts.length && pts[i].d <= S.d; i++) c.lineTo(X(pts[i].x / E), Y(pts[i].y / E));
+      c.lineTo(X(px), Y(py)); c.lineWidth = 4; c.strokeStyle = K.fondo; c.globalAlpha = .7; c.stroke(); c.globalAlpha = 1;
     }
-    c.setLineDash([]);
+    c.beginPath(); falta.forEach(function (q, k) { if (k) c.lineTo(X(q[0]), Y(q[1])); else c.moveTo(X(q[0]), Y(q[1])); });
+    c.setLineDash([]); c.lineWidth = 11; c.strokeStyle = K.fondo; c.stroke();
+    c.setLineDash([14, 10]); c.lineWidth = 6; c.strokeStyle = K.ruta; c.lineDashOffset = -(S.d / E * cam.s); c.stroke(); c.setLineDash([]);
 
-    /* persona vista desde arriba: hombros, cabeza y flecha hacia donde mira */
-    var tx = X(pos.x), ty = Y(pos.y);
-    if (S.px === null || reducir) S.px = { x: tx, y: ty, a: pos.ang };
-    S.px.x += (tx - S.px.x) * 0.25; S.px.y += (ty - S.px.y) * 0.25;
+    /* salidas: la destino grande y con nombre; las otras chicas */
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    Object.keys(P.nodos).forEach(function (id) {
+      var n = P.nodos[id]; if (n.tipo !== 'salida') return;
+      var sx = X(n.px), sy = Y(n.py), es = (id === S.plan.destino.id);
+      c.fillStyle = es ? K.salida : K.fondo; c.strokeStyle = es ? K.fondo : K.salida; c.lineWidth = es ? 4 : 3;
+      var r = es ? 17 : 8; c.beginPath(); c.arc(sx, sy, r, 0, 7); c.fill(); c.stroke();
+      if (es) {
+        if (!reducir) { var t = (Date.now() % 1400) / 1400; c.globalAlpha = 1 - t; c.strokeStyle = K.salida; c.lineWidth = 4; c.beginPath(); c.arc(sx, sy, 17 + t * 22, 0, 7); c.stroke(); c.globalAlpha = 1; }
+        c.fillStyle = K.sobre; c.font = '800 20px system-ui,sans-serif'; c.fillText('➜', sx, sy + 1);
+        var nom = 'SALIDA: ' + n.nombre.replace(/^(la|el) /, '');
+        rotulo(c, nom.toUpperCase(), Math.max(70, Math.min(W - 70, sx)), sy - 32 < 16 ? sy + 34 : sy - 32, K, '800 12px system-ui,sans-serif');
+      }
+    });
+    /* el cartel donde empezó */
+    var o = P.nodos[S.plan.origen];
+    if (o && o.tipo === 'cartel') { c.fillStyle = K.texto; c.strokeStyle = K.fondo; c.lineWidth = 3; c.beginPath(); c.rect(X(o.px) - 7, Y(o.py) - 7, 14, 14); c.fill(); c.stroke(); }
+
+    /* monito: se mueve suave hacia su lugar y camina (pies y brazos) mientras avanza */
+    var tx = X(px), ty = Y(py);
+    if (!S.px || reducir) S.px = { x: tx, y: ty, a: pos.ang, f: 0 };
+    var mx = tx - S.px.x, my = ty - S.px.y, mov = Math.hypot(mx, my);
+    S.px.x += mx * 0.3; S.px.y += my * 0.3;
     var da = Motor.dif(S.px.a, pos.ang); S.px.a += da * 0.3;
-    c.save(); c.translate(S.px.x, S.px.y); c.rotate(S.px.a * Math.PI / 180);
-    c.fillStyle = K.fondo; c.beginPath(); c.arc(0, 0, 19, 0, 7); c.fill();
-    c.fillStyle = K.persona; c.beginPath(); c.ellipse(0, 2, 15, 7, 0, 0, 7); c.fill();
-    c.beginPath(); c.arc(0, 0, 7, 0, 7); c.fill();
-    c.beginPath(); c.moveTo(0, -25); c.lineTo(9, -13); c.lineTo(-9, -13); c.closePath(); c.fill();
-    c.restore();
-    if (Math.abs(S.px.x - tx) > 0.5 || Math.abs(S.px.y - ty) > 0.5 || Math.abs(da) > 1) requestAnimationFrame(dibujar);
+    var caminando = (mov > 0.4) || (S.sim && S.d < S.plan.total);
+    if (caminando) S.px.f += Math.max(mov * 0.5, 0.18);
+    c.save(); c.translate(S.px.x, S.px.y); c.rotate(S.px.a * Math.PI / 180); monito(c, K, S.px.f, caminando); c.restore();
 
-    /* etiqueta de piso */
-    c.font = '800 13px system-ui,sans-serif'; c.textAlign = 'left'; c.textBaseline = 'top';
-    var tp = piso.nombre, tw = c.measureText(tp).width + 16;
-    c.fillStyle = K.acento; c.fillRect(8, 8, tw, 26); c.fillStyle = K.sobre; c.fillText(tp, 16, 14);
+    /* etiqueta de piso: solo si hay varios pisos */
+    if (Object.keys(P.pisos).length > 1) {
+      c.font = '800 13px system-ui,sans-serif'; c.textAlign = 'left'; c.textBaseline = 'top';
+      var tp = P.pisos[pos.piso].nombre, tw = c.measureText(tp).width + 16;
+      c.fillStyle = K.acento; c.fillRect(8, 8, tw, 26); c.fillStyle = K.sobre; c.fillText(tp, 16, 14);
+    }
+    if (mov > 0.4 || cambia || (!reducir && S.d < S.plan.total) || Math.abs(da) > 1) requestAnimationFrame(dibujar);
   }
   function actualizar(forzar) {
     if (!S.plan) return;
     var falta = Math.max(0, S.plan.total - S.d), pos = Motor.posEn(S.plan, S.d);
     $('falta').textContent = falta < 0.5 ? 'Llegó' : 'Faltan ' + Math.round(falta) + ' m · unos ' + Math.round(falta / P.paso_m) + ' pasos';
-    $('piso').textContent = P.pisos[pos.piso].nombre;
+    $('piso').textContent = Object.keys(P.pisos).length > 1 ? P.pisos[pos.piso].nombre : 'Salida: ' + S.plan.destino.nombre.replace(/^(la|el) /, '');
     $('bAnt').disabled = S.idx <= 0; $('bSig').disabled = S.idx >= S.plan.pasos.length - 1;
-    $('croquis').setAttribute('aria-label', 'Croquis. ' + P.pisos[pos.piso].nombre + '. ' + (falta < 0.5 ? 'Llegó a la salida.' : 'Faltan ' + Math.round(falta) + ' metros.'));
+    $('croquis').setAttribute('aria-label', 'Croquis del plantel. Va hacia ' + S.plan.destino.nombre + '. ' + (falta < 0.5 ? 'Ya llegó.' : 'Faltan ' + Math.round(falta) + ' metros.'));
     dibujar();
   }
 
@@ -317,6 +347,11 @@
   $('bSim').onclick = simular;
   $('bFin').onclick = function () { detenerSim(); if (window.speechSynthesis) speechSynthesis.cancel(); S.plan = null; ver('inicio'); };
   window.addEventListener('resize', function () { dibujar(); });
+  /* Si la app ya estaba abierta y escanean otro cartel (con la cámara del celular), llega un nuevo #cartel */
+  window.addEventListener('hashchange', function () {
+    var id = idDeCodigo(location.hash.replace(/^#/, ''));
+    if (id) { $('selLugar').value = id; alEscanear(id); }
+  });
   if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener && matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () { dibujar(); });
   if (window.speechSynthesis) speechSynthesis.onvoiceschanged = function () {};
 
@@ -331,7 +366,7 @@
   ver('inicio');
 
   /* Si la página se abre con un enlace de cartel (#id o ?p=id) empieza sola */
-  var inicial = idDeCodigo(location.search + location.hash) || idDeCodigo(location.hash.replace(/^#/, ''));
+  var inicial = idDeCodigo(location.search) || idDeCodigo(location.hash) || idDeCodigo(location.hash.replace(/^#/, ''));
   if (inicial) { sel.value = inicial; iniciar(inicial); }
 
   /* Para pruebas en navegador */

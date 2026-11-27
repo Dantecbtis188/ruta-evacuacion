@@ -15,7 +15,22 @@ android {
         versionName '1.0'
     }
 
+    // Llave de firma FIJA (archivo ruta-evacuacion.keystore). Sirve para que cada APK nuevo se firme igual:
+    // así se puede actualizar la app sin desinstalarla y los "enlaces verificados" del QR funcionan.
+    // Es una llave de práctica para un proyecto escolar; no es para publicar en Play Store.
+    signingConfigs {
+        fija {
+            storeFile file('ruta-evacuacion.keystore')
+            storePassword 'android'
+            keyAlias 'ruta'
+            keyPassword 'android'
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig signingConfigs.fija
+        }
         release {
             minifyEnabled false
         }

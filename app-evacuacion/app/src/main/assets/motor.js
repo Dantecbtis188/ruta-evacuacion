@@ -150,7 +150,7 @@ var Motor = (function () {
       detalle: esRefugio ? 'Espere aquí y avise a un brigadista' : 'Vaya ' + aArt(fin.reunion || 'el punto de reunión'),
       texto: esRefugio
         ? 'Llegó al área de resguardo. Espere aquí y avise a un brigadista. Si nadie llega, llame al ' + P.telefono + ' y diga en qué piso está.'
-        : 'Llegó a ' + (fin.nombre || 'la salida') + '. Salga con calma y diríjase ' + aArt(fin.reunion || 'el punto de reunión') + ', el punto de reunión. Espere indicaciones del personal.'
+        : 'Llegó a ' + (fin.nombre || 'la salida') + '. Salga con calma y diríjase ' + (fin.reunion ? aArt(fin.reunion) + ', el punto de reunión' : 'al punto de reunión') + '. Espere indicaciones del personal.'
     });
 
     return {
