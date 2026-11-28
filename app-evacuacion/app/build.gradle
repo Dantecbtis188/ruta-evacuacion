@@ -1,0 +1,44 @@
+// Datos de la aplicación.
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'mx.edu.rutaevacuacion'      // identificador único de la app
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'mx.edu.rutaevacuacion'
+        minSdk 26                          // Android 8.0 o más nuevo
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+
+    // Llave de firma FIJA (archivo ruta-evacuacion.keystore). Sirve para que cada APK nuevo se firme igual:
+    // así se puede actualizar la app sin desinstalarla y los "enlaces verificados" del QR funcionan.
+    // Es una llave de práctica para un proyecto escolar; no es para publicar en Play Store.
+    signingConfigs {
+        fija {
+            storeFile file('ruta-evacuacion.keystore')
+            storePassword 'android'
+            keyAlias 'ruta'
+            keyPassword 'android'
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.fija
+        }
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+// No lleva librerías extra: la app solo abre la página guardada dentro de ella.
